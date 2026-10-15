@@ -6,9 +6,10 @@ all three races; there is no scripted play. It plays 1v1 melee through
 BWAPI (https://bwapi.github.io/).
 
 **Status: binary releases.** This repo hosts binary releases of Pluto.
-The current one is the model that played the CoG 2026 StarCraft AI
-Competition (`md07x02_cog2026_2578600_int8mv`), with CPU inference — no
-GPU needed. Grab it from the Releases page.
+The current one is **Pluto v2.0** (model `md09b_1331000`), with CPU
+inference — no GPU needed. Grab it from the Releases page. Earlier
+releases: the CoG 2026 competition entry (`cog2026-2578600`) and beta 1
+(`beta-2247200`).
 
 ## Requirements
 
@@ -31,9 +32,12 @@ Unpack the release zip into your StarCraft folder's `bwapi-data/AI/`
 
 Point bwapi.ini at the DLL as usual: `ai = bwapi-data/AI/pluto.dll`
 
+When upgrading, replace all three files: don't mix them with files from
+an earlier release.
+
 Register the bot as Zerg, Terran, Protoss, or Random — it plays all of
 them. It announces itself in chat on game start:
-"Pluto online (md07x02_cog2026_2578600_int8mv). gl hf!"
+"Pluto online (v2.0 md09b_1331000). gl hf!"
 
 The binaries are unsigned, so Windows SmartScreen or antivirus software
 may warn on first run.
@@ -71,14 +75,19 @@ Check pluto.log and pluto_infer.log in the StarCraft folder.
                        record against that opponent
 
 The bot picks its opening with a bandit over the per-opponent win/loss
-counts; every build is listed with its mask and name, so you can edit
-the numbers to steer it. The file is re-read every game (from write/ or
+counts; every build is listed by name, so you can edit the numbers to
+steer it. The file is re-read every game (from write/ or
 read/, whichever is newer, so the usual write/ -> read/ copy between
 games works too); if you edit it, bump the `seq` line so your copy wins
 and keep the closing `end` line. Below the stats, the file keeps one
 JSON line per game: a start record (opponent, map, chosen build), an
 end record (result, frame timing, the model's win-probability
 trajectory) and any error or resign events.
+
+Stats files written by releases before v2.0 use an older format and are
+not read: that opponent starts fresh, and the first v2.0 game against
+it replaces the file. Copy it elsewhere first if you want to keep the
+old records.
 
 ## Notes
 
@@ -90,10 +99,13 @@ trajectory) and any error or resign events.
   the engine uses up to 6 threads.
 - `BWRL_DRAW=1` in the environment draws the model's win-probability
   graph on screen (off by default; nice for watching games).
-- Pluto resigns: when its own win estimate stays pinned at a loss for
-  ~10 seconds it says "gg" and leaves the game. A mid-game engine
-  failure exits the StarCraft process instead — it counts as a crash,
-  deliberately, rather than as a loss.
+- Pluto resigns: when its own win estimate stays at -0.90 or below
+  (on a -1 to 1 scale) for ~10 seconds, it says "gg" and leaves the
+  game. `BWRL_RESIGN_THRESHOLD=<number between -1 and 0>` moves the
+  threshold (e.g. `-0.95` resigns later) and `BWRL_RESIGN_THRESHOLD=off`
+  turns resigning off. A mid-game engine failure exits the StarCraft
+  process instead — it counts as a crash, deliberately, rather than as
+  a loss.
 - Two games against the same opponent must not run in parallel on one
   install (they share the stats file above; tournament managers already
   avoid this). Different opponents in parallel are fine.
